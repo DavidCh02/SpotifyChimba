@@ -1,0 +1,26 @@
+<!-- app/templates/edit_song.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="edit-song">
+    <h2>Editar Canción</h2>
+    <form method="POST" action="{{ url_for('main.edit_song', id_cancion=song.id_cancion) }}">
+        <label for="titulo">Título:</label>
+        <input type="text" id="titulo" name="titulo" value="{{ song.titulo }}" required>
+        <label for="id_artista">Artista:</label>
+        <select id="id_artista" name="id_artista" required>
+            {% for artista in artistas %}
+                <option value="{{ artista.id_artista }}" {% if artista.id_artista == song.id_artista %}selected{% endif %}>{{ artista.nombre }}</option>
+            {% endfor %}
+        </select>
+        <label for="id_album">Álbum:</label>
+        <select id="id_album" name="id_album" required>
+            {% for album in albumes %}
+                <option value="{{ album.id_album }}" {% if album.id_album == song.id_album %}selected{% endif %}>{{ album.titulo }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Guardar Cambios</button>
+    </form>
+</section>
+{% endblock %}

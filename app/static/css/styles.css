@@ -1,0 +1,67 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #ffffff;
+}
+
+header {
+    background-color: #1DB954;
+    padding: 1rem;
+    text-align: center;
+}
+
+header .logo a {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.nav-links a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.hero {
+    text-align: center;
+    padding: 2rem;
+    background-color: #181818;
+}
+
+.featured {
+    padding: 2rem;
+}
+
+.songs-grid, .albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.song-card, .album-card {
+    background-color: #282828;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.song-card h3, .album-card h3 {
+    margin: 0;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #1DB954;
+    margin-top: 2rem;
+}
