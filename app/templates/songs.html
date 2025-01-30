@@ -1,0 +1,20 @@
+<!-- app/templates/songs.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="songs">
+    <h2>Canciones Disponibles</h2>
+    <ul>
+        {% for cancion in canciones %}
+            <li>
+                {{ cancion.titulo }} - {{ cancion.artista.nombre }} - {{ cancion.album.titulo }} - {{ cancion.duracion }} segundos
+                <audio controls>
+                    <source src="{{ url_for('static', filename='uploads/' ~ cancion.ruta_archivo) }}" type="audio/mpeg">
+                    Tu navegador no soporta la reproducción de audio.
+                </audio>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}
