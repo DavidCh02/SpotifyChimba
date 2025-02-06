@@ -8,7 +8,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import app
-from app.models import Usuario, Playlist, Artista, Album, Cancion
+from app.models import Usuario, Playlist, Artista, Album, Cancion, FavoritoAlbum, FavoritoCancion
 from app import db
 from functools import wraps
 from mutagen.mp3 import MP3
@@ -220,3 +220,45 @@ def uploaded_file(filename):
 def album(id_album):
     album = Album.query.get_or_404(id_album)
     return render_template('album.html', album=album)
+
+
+# Marcar/Desmarcar una canción como favorita
+@main.route('/toggle_favorite_song/<int:id_cancion>', methods=['POST'])
+@login_required
+def toggle_favorite_song(id_cancion):
+    # Verificar si la canción ya está marcada como favorita
+    favorito = FavoritoCancion.query.filter_by(id_usuario=current_user.id_usuario, id_cancion=id_cancion).first()
+    if favorito:
+        # Si ya es favorita, eliminarla
+        db.session.delete(favorito)
+        mensaje = "Canción eliminada de favoritos."
+    else:
+        # Si no es favorita, agregarla
+        nuevo_favorito = FavoritoCancion(id_usuario=current_user.id_usuario, id_cancion=id_cancion)
+        db.session.add(nuevo_favorito)
+        mensaje = "Canción agregada a favoritos."
+
+    db.session.commit()
+    flash(mensaje, 'success')
+    return redirect(request.referrer)
+
+
+# Marcar/Desmarcar un álbum como favorito
+@main.route('/toggle_favorite_album/<int:id_album>', methods=['POST'])
+@login_required
+def toggle_favorite_album(id_album):
+    # Verificar si el álbum ya está marcado como favorito
+    favorito = FavoritoAlbum.query.filter_by(id_usuario=current_user.id_usuario, id_album=id_album).first()
+    if favorito:
+        # Si ya es favorito, eliminarlo
+        db.session.delete(favorito)
+        mensaje = "Álbum eliminado de favoritos."
+    else:
+        # Si no es favorito, agregarlo
+        nuevo_favorito = FavoritoAlbum(id_usuario=current_user.id_usuario, id_album=id_album)
+        db.session.add(nuevo_favorito)
+        mensaje = "Álbum agregado a favoritos."
+
+    db.session.commit()
+    flash(mensaje, 'success')
+    return redirect(request.referrer)

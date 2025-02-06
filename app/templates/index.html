@@ -181,23 +181,33 @@
     <h2 class="section-title">Canciones Populares</h2>
     <div class="songs-grid">
         {% for cancion in canciones %}
-        <div class="song-card">
-            <div class="play-icon">
-                <i class="fas fa-play fa-lg" style="color: white;"></i>
+            <div class="song-card">
+                <div class="play-icon">
+                    <i class="fas fa-play fa-lg" style="color: white;"></i>
+                </div>
+                <h3>{{ cancion.titulo }}</h3>
+                <div class="artist-info">
+                    <i class="fas fa-user"></i> {{ cancion.artista.nombre }}
+                    <br>
+                    <i class="fas fa-compact-disc"></i> {% if cancion.album %}{{ cancion.album.titulo }}{% else %}Sencillo{% endif %}
+                </div>
+                <div class="audio-player">
+                    <audio controls>
+                        <source src="{{ url_for('main.uploaded_file', filename=cancion.ruta_archivo) }}" type="audio/mpeg">
+                        Tu navegador no soporta audio.
+                    </audio>
+                </div>
+                <!-- Botón para marcar/desmarcar como favorita -->
+                <form action="{{ url_for('main.toggle_favorite_song', id_cancion=cancion.id_cancion) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="favorite-btn">
+                        {% if current_user.is_authenticated and cancion in current_user.favoritos_canciones %}
+                            ❤️ Quitar de Favoritos
+                        {% else %}
+                            🖤 Agregar a Favoritos
+                        {% endif %}
+                    </button>
+                </form>
             </div>
-            <h3>{{ cancion.titulo }}</h3>
-            <div class="artist-info">
-                <i class="fas fa-user"></i> {{ cancion.artista.nombre }}
-                <br>
-                <i class="fas fa-compact-disc"></i> {% if cancion.album %}{{ cancion.album.titulo }}{% else %}Sencillo{% endif %}
-            </div>
-            <div class="audio-player">
-                <audio controls>
-                    <source src="{{ url_for('main.uploaded_file', filename=cancion.ruta_archivo) }}" type="audio/mpeg">
-                    Tu navegador no soporta audio.
-                </audio>
-            </div>
-        </div>
         {% endfor %}
     </div>
 </section>
@@ -206,16 +216,26 @@
     <h2 class="section-title">Álbumes Destacados</h2>
     <div class="albums-grid">
         {% for album in albumes %}
-        <div class="album-card">
-            <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
-            <h3>{{ album.titulo }}</h3>
-            <div class="artist-info">
-                <i class="fas fa-user"></i> {{ album.artista.nombre }}
-            </div>
-            <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
-                <i class="fas fa-play"></i> Ver Álbum
-            </a>
-        </div>
+       <div class="album-card">
+    <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
+    <h3>{{ album.titulo }}</h3>
+    <div class="artist-info">
+        <i class="fas fa-user"></i> {{ album.artista.nombre }}
+    </div>
+    <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
+        <i class="fas fa-play"></i> Ver Álbum
+    </a>
+    <!-- Botón para marcar/desmarcar como favorito -->
+    <form action="{{ url_for('main.toggle_favorite_album', id_album=album.id_album) }}" method="POST" style="display: inline;">
+        <button type="submit" class="favorite-btn">
+            {% if current_user.is_authenticated and album in current_user.favoritos_albumes %}
+                ❤️ Quitar de Favoritos
+            {% else %}
+                🖤 Agregar a Favoritos
+            {% endif %}
+        </button>
+    </form>
+</div>
         {% endfor %}
     </div>
 </section>
