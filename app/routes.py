@@ -6,6 +6,8 @@ from datetime import timedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, Response
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+import app
 from app.models import Usuario, Playlist, Artista, Album, Cancion
 from app import db
 from functools import wraps
@@ -22,8 +24,10 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 @main.route('/')
 def index():
-    canciones = Cancion.query.all()
-    return render_template('index.html', canciones=canciones)
+    canciones = Cancion.query.all()  # Obtener todas las canciones
+    albumes = Album.query.all()  # Obtener todos los álbumes
+    return render_template('index.html', canciones=canciones, albumes=albumes)
+
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -119,37 +123,60 @@ def admin():
             db.session.add(new_album)
             db.session.commit()
             flash('Álbum agregado correctamente', 'success')
-        elif 'upload_song' in request.form:
-            titulo = request.form.get('titulo')
-            id_artista = request.form.get('id_artista')
-            id_album = request.form.get('id_album')
-            archivo = request.files['archivo']
-            archivo_path = os.path.join(UPLOAD_FOLDER, archivo.filename)
-            archivo.save(archivo_path)
 
-            # Usando Mutagen para obtener la duración de la canción
-            audio = MP3(archivo_path, ID3=EasyID3)
-            duracion_segundos = int(audio.info.length)  # Duración en segundos
+            # Agregar canciones después de crear el álbum
+            canciones = request.files.getlist('canciones')  # Obtén las canciones subidas
+            for cancion in canciones:
+                filename = secure_filename(cancion.filename)
+                filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                cancion.save(filepath)  # Guarda la canción en el servidor
 
-            # Convertir segundos a formato hh:mm:ss
-            duracion_timedelta = str(timedelta(seconds=duracion_segundos))
-
-            # Ahora puedes guardar la duración en formato TIME
-            new_song = Cancion(
-                titulo=titulo,
-                id_artista=id_artista,
-                id_album=id_album,
-                ruta_archivo=archivo.filename,
-                duracion=duracion_timedelta  # Guardamos la duración como tiempo
-            )
-            db.session.add(new_song)
+                # Crea las canciones en la base de datos y asócialas con el álbum
+                nueva_cancion = Cancion(
+                    titulo=cancion.filename,
+                    ruta_archivo=filename,
+                    id_artista=id_artista,
+                    id_album=new_album.id_album
+                )
+                db.session.add(nueva_cancion)
             db.session.commit()
-            flash('Canción subida correctamente', 'success')
 
+        elif 'upload_song' in request.form:
+            # Subir una canción adicional (si no se subió al crear el álbum)
+            titulo = request.form['titulo']
+            id_artista = request.form['id_artista']
+            id_album = request.form['id_album']
+            archivo = request.files['archivo']
+
+            if not id_album:
+                id_album = None  # Si no se selecciona un álbum, lo dejamos como None
+
+            # Guardar el archivo de la canción
+            filename = secure_filename(archivo.filename)
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            archivo.save(filepath)
+
+            # Crear y guardar la canción en la base de datos
+            nueva_cancion = Cancion(
+                titulo=titulo,
+                ruta_archivo=filename,
+                id_artista=id_artista,
+                id_album=id_album
+            )
+            db.session.add(nueva_cancion)
+            db.session.commit()
+
+            flash('Canción subida correctamente', 'success')
+            return redirect(url_for('main.admin'))
+
+    # Obtener los artistas y álbumes para el formulario
     artistas = Artista.query.all()
     albumes = Album.query.all()
     canciones = Cancion.query.all()
+
     return render_template('admin.html', artistas=artistas, albumes=albumes, canciones=canciones)
+
+
 @main.route('/delete_song/<int:id_cancion>', methods=['POST'])
 @requires_auth
 def delete_song(id_cancion):
@@ -187,3 +214,9 @@ from flask import send_from_directory, current_app
 @main.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
+
+@main.route('/album/<int:id_album>')
+@login_required
+def album(id_album):
+    album = Album.query.get_or_404(id_album)
+    return render_template('album.html', album=album)

@@ -177,48 +177,48 @@
         <p>Descubre nueva música y disfruta de tus canciones favoritas en una experiencia única.</p>
     </section>
 
-    <section class="featured">
-        <h2 class="section-title">Canciones Populares</h2>
-        <div class="songs-grid">
-            {% for cancion in canciones %}
-            <div class="song-card">
-                <div class="play-icon">
-                    <i class="fas fa-play fa-lg" style="color: white;"></i>
-                </div>
-                <h3>{{ cancion.titulo }}</h3>
-                <div class="artist-info">
-                    <i class="fas fa-user"></i> {{ cancion.artista.nombre }}
-                    <br>
-                    <i class="fas fa-compact-disc"></i> {{ cancion.album.titulo }}
-                </div>
-                <div class="audio-player">
-                    <audio controls>
-                        <source src="{{ url_for('main.uploaded_file', filename=cancion.ruta_archivo) }}" type="audio/mpeg">
-                        Tu navegador no soporta audio.
-                    </audio>
-                </div>
+   <section class="featured">
+    <h2 class="section-title">Canciones Populares</h2>
+    <div class="songs-grid">
+        {% for cancion in canciones %}
+        <div class="song-card">
+            <div class="play-icon">
+                <i class="fas fa-play fa-lg" style="color: white;"></i>
             </div>
-            {% endfor %}
+            <h3>{{ cancion.titulo }}</h3>
+            <div class="artist-info">
+                <i class="fas fa-user"></i> {{ cancion.artista.nombre }}
+                <br>
+                <i class="fas fa-compact-disc"></i> {% if cancion.album %}{{ cancion.album.titulo }}{% else %}Sencillo{% endif %}
+            </div>
+            <div class="audio-player">
+                <audio controls>
+                    <source src="{{ url_for('main.uploaded_file', filename=cancion.ruta_archivo) }}" type="audio/mpeg">
+                    Tu navegador no soporta audio.
+                </audio>
+            </div>
         </div>
-    </section>
+        {% endfor %}
+    </div>
+</section>
 
-    <section class="featured">
-        <h2 class="section-title">Álbumes Destacados</h2>
-        <div class="albums-grid">
-            {% for album in albumes %}
-            <div class="album-card">
-                <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
-                <h3>{{ album.titulo }}</h3>
-                <div class="artist-info">
-                    <i class="fas fa-user"></i> {{ album.artista.nombre }}
-                </div>
-                <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
-                    <i class="fas fa-play"></i> Ver Álbum
-                </a>
+<section class="featured">
+    <h2 class="section-title">Álbumes Destacados</h2>
+    <div class="albums-grid">
+        {% for album in albumes %}
+        <div class="album-card">
+            <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
+            <h3>{{ album.titulo }}</h3>
+            <div class="artist-info">
+                <i class="fas fa-user"></i> {{ album.artista.nombre }}
             </div>
-            {% endfor %}
+            <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
+                <i class="fas fa-play"></i> Ver Álbum
+            </a>
         </div>
-    </section>
+        {% endfor %}
+    </div>
+</section>
     {% endblock %}
 
     <script>
