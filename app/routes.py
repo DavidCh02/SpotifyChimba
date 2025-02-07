@@ -8,8 +8,9 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import app
-from app.models import Usuario, Playlist, Artista, Album, Cancion, FavoritoAlbum, FavoritoCancion
+from app.models import Usuario, Artista, Album, Cancion, FavoritoAlbum, FavoritoCancion
 from app import db
+from app.models import Playlist
 from functools import wraps
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
@@ -65,7 +66,13 @@ def register():
 @main.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    # Obtener las playlists del usuario actual
+    playlists = Playlist.query.filter_by(id_usuario=current_user.id_usuario).all()
+
+    # Obtener todas las canciones disponibles (para agregar a playlists)
+    canciones = Cancion.query.all()
+
+    return render_template('profile.html', playlists=playlists, canciones=canciones)
 
 @main.route('/playlist/<int:id_playlist>')
 @login_required
@@ -106,6 +113,9 @@ def requires_auth(f):
 
 # app/routes.py
 
+from mutagen.mp3 import MP3
+from werkzeug.utils import secure_filename
+
 @main.route('/admin', methods=['GET', 'POST'])
 @requires_auth  # Requiere autenticación para acceder al panel de administración
 def admin():
@@ -130,7 +140,6 @@ def admin():
                 pais_origen=pais_origen,
                 fecha_inicio=fecha_inicio
             )
-
             try:
                 db.session.add(new_artist)
                 db.session.commit()
@@ -138,7 +147,6 @@ def admin():
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error al agregar el artista: {str(e)}", "danger")
-
 
         # Agregar un álbum
         elif 'add_album' in request.form:
@@ -152,11 +160,9 @@ def admin():
 
             # Crear un nuevo álbum
             new_album = Album(titulo=titulo, id_artista=id_artista)
-
             try:
                 db.session.add(new_album)
-                db.session.commit()
-
+                db.session.flush()  # Guarda temporalmente para obtener el ID del álbum
                 # Subir canciones asociadas al álbum
                 canciones = request.files.getlist('canciones')  # Obtener las canciones subidas
                 for cancion in canciones:
@@ -165,15 +171,27 @@ def admin():
                         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
                         cancion.save(filepath)  # Guardar la canción en el servidor
 
+                        # Obtener metadatos del archivo
+                        tamaño = os.path.getsize(filepath)
+                        formato = filename.split('.')[-1].lower()
+                        audio = MP3(filepath)
+                        duracion_segundos = int(audio.info.length)
+                        minutos = duracion_segundos // 60
+                        segundos = duracion_segundos % 60
+                        duracion = f"{minutos}:{segundos:02d}"
+
                         # Crear la canción en la base de datos y asociarla con el álbum
                         nueva_cancion = Cancion(
-                            titulo=cancion.filename,
-                            ruta_archivo=filename,
+                            titulo=filename,
+                            duracion=duracion,
+                            es_sencillo=False,
                             id_artista=id_artista,
-                            id_album=new_album.id_album
+                            id_album=new_album.id_album,
+                            ruta_archivo=filename,
+                            tamanio=tamaño,
+                            formato=formato
                         )
                         db.session.add(nueva_cancion)
-
                 db.session.commit()
                 flash('Álbum agregado correctamente', 'success')
             except Exception as e:
@@ -197,14 +215,34 @@ def admin():
             filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             archivo.save(filepath)
 
+            # Obtener el tamaño del archivo
+            tamaño = os.path.getsize(filepath)
+
+            # Obtener el formato del archivo
+            formato = filename.split('.')[-1].lower()
+
+            # Obtener la duración del archivo usando Mutagen
+            try:
+                audio = MP3(filepath)
+                duracion_segundos = int(audio.info.length)
+                minutos = duracion_segundos // 60
+                segundos = duracion_segundos % 60
+                duracion = f"{minutos}:{segundos:02d}"
+            except Exception as e:
+                flash(f"Error al leer los metadatos del archivo: {str(e)}", "danger")
+                return redirect(url_for('main.admin'))
+
             # Crear la canción en la base de datos
             nueva_cancion = Cancion(
                 titulo=titulo,
-                ruta_archivo=filename,
+                duracion=duracion,
+                es_sencillo=(id_album is None),
                 id_artista=id_artista,
-                id_album=id_album if id_album else None  # Si no se selecciona un álbum, dejarlo como None
+                id_album=id_album if id_album else None,  # Si no se selecciona un álbum, dejarlo como None
+                ruta_archivo=filename,
+                tamanio=tamaño,  # Usar "tamanio" en lugar de "tamaño"
+                formato=formato
             )
-
             try:
                 db.session.add(nueva_cancion)
                 db.session.commit()
@@ -212,12 +250,12 @@ def admin():
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error al subir la canción: {str(e)}", "danger")
+            return redirect(url_for('main.admin'))
 
     # Obtener los artistas, álbumes y canciones para mostrar en el formulario
     artistas = Artista.query.all()
     albumes = Album.query.all()
     canciones = Cancion.query.all()
-
     return render_template('admin.html', artistas=artistas, albumes=albumes, canciones=canciones)
 
 
@@ -312,3 +350,106 @@ def toggle_favorite_album(id_album):
     db.session.commit()
     flash(mensaje, 'success')
     return redirect(request.referrer)
+
+@main.route('/edit_album/<int:id_album>', methods=['GET', 'POST'])
+@requires_auth
+def edit_album(id_album):
+    # Obtener el álbum por su ID
+    album = Album.query.get_or_404(id_album)
+
+    if request.method == 'POST':
+        # Actualizar los datos del álbum
+        album.titulo = request.form.get('titulo')
+        album.id_artista = request.form.get('id_artista')
+        try:
+            db.session.commit()
+            flash('Álbum actualizado correctamente', 'success')
+            return redirect(url_for('main.admin'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al actualizar el álbum: {str(e)}", "danger")
+
+    # Obtener los artistas para el menú desplegable
+    artistas = Artista.query.all()
+    return render_template('edit_album.html', album=album, artistas=artistas)
+
+@main.route('/delete_album/<int:id_album>', methods=['POST'])
+@requires_auth
+def delete_album(id_album):
+    album = Album.query.get_or_404(id_album)
+    try:
+        # Eliminar todas las canciones asociadas al álbum
+        for cancion in album.canciones:
+            db.session.delete(cancion)
+        # Eliminar el álbum
+        db.session.delete(album)
+        db.session.commit()
+        flash('Álbum eliminado correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al eliminar el álbum: {str(e)}", "danger")
+    return redirect(url_for('main.admin'))
+
+@main.route('/create_playlist', methods=['POST'])
+@login_required
+def create_playlist():
+    nombre = request.form.get('nombre')
+    if not nombre:
+        flash("El nombre de la playlist es obligatorio.", "danger")
+        return redirect(url_for('main.profile'))
+
+    nueva_playlist = Playlist(nombre=nombre, id_usuario=current_user.id_usuario)
+    try:
+        db.session.add(nueva_playlist)
+        db.session.commit()
+        flash("Playlist creada correctamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al crear la playlist: {str(e)}", "danger")
+
+    return redirect(url_for('main.profile'))
+@main.route('/add_to_playlist/<int:id_cancion>', methods=['POST'])
+@login_required
+def add_to_playlist(id_cancion):
+    id_playlist = request.form.get('id_playlist')  # Obtener el ID de la playlist desde el formulario
+    if not id_playlist:
+        flash("Selecciona una playlist válida.", "danger")
+        return redirect(url_for('main.profile'))
+
+    playlist = Playlist.query.get_or_404(id_playlist)
+    cancion = Cancion.query.get_or_404(id_cancion)
+
+    if playlist.id_usuario != current_user.id_usuario:
+        flash("No tienes permiso para modificar esta playlist.", "danger")
+        return redirect(url_for('main.profile'))
+
+    if cancion in playlist.canciones:
+        flash("La canción ya está en la playlist.", "warning")
+    else:
+        playlist.canciones.append(cancion)
+        try:
+            db.session.commit()
+            flash("Canción agregada a la playlist correctamente.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al agregar la canción: {str(e)}", "danger")
+
+    return redirect(url_for('main.profile'))
+@main.route('/delete_playlist/<int:id_playlist>', methods=['POST'])
+@login_required
+def delete_playlist(id_playlist):
+    playlist = Playlist.query.get_or_404(id_playlist)
+
+    if playlist.id_usuario != current_user.id_usuario:
+        flash("No tienes permiso para eliminar esta playlist.", "danger")
+        return redirect(url_for('main.profile'))
+
+    try:
+        db.session.delete(playlist)
+        db.session.commit()
+        flash("Playlist eliminada correctamente.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al eliminar la playlist: {str(e)}", "danger")
+
+    return redirect(url_for('main.profile'))

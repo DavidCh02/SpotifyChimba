@@ -33,64 +33,86 @@
         </form>
     </div>
 
-    <!-- Agregar Álbum -->
-    <div class="form-container">
-        <h3>Agregar Álbum</h3>
-        <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="album-form">
-            <input type="hidden" name="add_album" value="1">
-            <div class="form-group">
-                <label for="titulo">Título:</label>
-                <input type="text" id="titulo" name="titulo" required>
-            </div>
-            <div class="form-group">
-                <label for="id_artista">Artista:</label>
-                <select id="id_artista" name="id_artista" required>
-                    {% for artista in artistas %}
-                        <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="canciones">Subir Canciones:</label>
-                <input type="file" id="canciones" name="canciones" multiple required>
-            </div>
-            <button type="submit" class="submit-btn">Agregar Álbum</button>
-        </form>
-    </div>
+   <!-- Agregar Álbum -->
+<div class="form-container">
+    <h3>Agregar Álbum</h3>
+    <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="album-form">
+        <!-- Campo oculto para identificar la acción -->
+        <input type="hidden" name="add_album" value="1">
 
-    <!-- Subir Canción -->
-    <div class="form-container">
-        <h3>Subir Canción</h3>
-        <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="song-form">
-            <input type="hidden" name="upload_song" value="1">
-            <div class="form-group">
-                <label for="titulo">Título:</label>
-                <input type="text" id="titulo" name="titulo" required>
-            </div>
-            <div class="form-group">
-                <label for="id_artista">Artista:</label>
-                <select id="id_artista" name="id_artista" required>
-                    {% for artista in artistas %}
-                        <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="id_album">Álbum:</label>
-                <select id="id_album" name="id_album">
-                    <option value="">Ninguno (Sencillo)</option>
-                    {% for album in albumes %}
-                        <option value="{{ album.id_album }}">{{ album.titulo }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="archivo">Archivo de Audio:</label>
-                <input type="file" id="archivo" name="archivo" accept="audio/*" required>
-            </div>
-            <button type="submit" class="submit-btn">Subir Canción</button>
-        </form>
-    </div>
+        <!-- Título del Álbum -->
+        <div class="form-group">
+            <label for="titulo">Título del Álbum:</label>
+            <input type="text" id="titulo" name="titulo" required placeholder="Ejemplo: Greatest Hits">
+        </div>
+
+        <!-- Artista -->
+        <div class="form-group">
+            <label for="id_artista">Artista:</label>
+            <select id="id_artista" name="id_artista" required>
+                <option value="" disabled selected>Selecciona un artista</option>
+                {% for artista in artistas %}
+                    <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Subir Canciones -->
+        <div class="form-group">
+            <label for="canciones">Subir Canciones:</label>
+            <input type="file" id="canciones" name="canciones" multiple required accept="audio/*">
+            <small class="form-hint">Puedes seleccionar múltiples archivos manteniendo presionada la tecla Ctrl (Windows) o Cmd (Mac).</small>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button type="submit" class="submit-btn">Agregar Álbum</button>
+    </form>
+</div>
+
+<!-- Subir Canción -->
+<div class="form-container">
+    <h3>Subir Canción</h3>
+    <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="song-form">
+        <input type="hidden" name="upload_song" value="1">
+
+        <!-- Título -->
+        <div class="form-group">
+            <label for="titulo">Título:</label>
+            <input type="text" id="titulo" name="titulo" required>
+        </div>
+
+        <!-- Artista -->
+        <div class="form-group">
+            <label for="id_artista">Artista:</label>
+            <select id="id_artista" name="id_artista" required>
+                <option value="" disabled selected>Selecciona un artista</option>
+                {% for artista in artistas %}
+                    <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Álbum (Opcional) -->
+        <div class="form-group">
+            <label for="id_album">Álbum (opcional):</label>
+            <select id="id_album" name="id_album">
+                <option value="">Ninguno (Sencillo)</option>
+                {% for album in albumes %}
+                    <option value="{{ album.id_album }}">{{ album.titulo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Archivo de Audio -->
+        <div class="form-group">
+            <label for="archivo">Archivo de Audio:</label>
+            <input type="file" id="archivo" name="archivo" accept="audio/*" required>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button type="submit" class="submit-btn">Subir Canción</button>
+    </form>
+</div>
 
     <!-- Lista de Canciones -->
     <div class="songs-list">
@@ -118,4 +140,32 @@
         </ul>
     </div>
 </section>
+
+<!-- Lista de Álbumes -->
+<div class="albums-list">
+    <h3>Álbumes</h3>
+    {% if albumes %}
+        <ul>
+            {% for album in albumes %}
+                <li class="album-item">
+                    <div class="album-info">
+                        <p><strong>{{ album.titulo }}</strong></p>
+                        <p>Artista: {{ album.artista.nombre }}</p>
+                        <p>Canciones: {{ album.canciones|length }}</p>
+                    </div>
+                    <div class="actions">
+                        <a href="{{ url_for('main.edit_album', id_album=album.id_album) }}" class="edit-btn">Editar</a>
+                        <form method="POST" action="{{ url_for('main.delete_album', id_album=album.id_album) }}">
+                            <button type="submit" class="delete-btn">Eliminar</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay álbumes disponibles.</p>
+    {% endif %}
+</div>
+
 {% endblock %}
+

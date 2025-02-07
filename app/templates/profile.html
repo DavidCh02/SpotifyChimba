@@ -3,6 +3,70 @@
 <section class="profile">
     <h2>Perfil de {{ current_user.nombre_usuario }}</h2>
 
+    <!-- Crear Playlist -->
+    <div class="form-container">
+        <h3>Crear Playlist</h3>
+        <form method="POST" action="{{ url_for('main.create_playlist') }}" class="playlist-form">
+            <div class="form-group">
+                <label for="nombre">Nombre de la Playlist:</label>
+                <input type="text" id="nombre" name="nombre" required placeholder="Ejemplo: Mis Favoritas">
+            </div>
+            <button type="submit" class="submit-btn">Crear Playlist</button>
+        </form>
+    </div>
+
+    <!-- Mostrar Playlists -->
+    <div class="playlists-section">
+        <h3>Mis Playlists</h3>
+        {% if playlists %}
+            <ul class="playlists-list">
+                {% for playlist in playlists %}
+                    <li class="playlist-item">
+                        <div class="playlist-info">
+                            <p><strong>{{ playlist.nombre }}</strong></p>
+                            <p>Canciones: {{ playlist.canciones|length }}</p>
+                        </div>
+                        <div class="actions">
+                            <!-- Botón para Eliminar la Playlist -->
+                            <form method="POST" action="{{ url_for('main.delete_playlist', id_playlist=playlist.id_playlist) }}">
+                                <button type="submit" class="delete-btn">Eliminar</button>
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No has creado ninguna playlist aún.</p>
+        {% endif %}
+    </div>
+
+<!-- Agregar Canciones a Playlists -->
+<div class="add-to-playlist-section">
+    <h3>Agregar Canciones a Playlists</h3>
+    <ul class="songs-list">
+        {% for cancion in canciones %}
+            <li class="song-item">
+                <div class="song-info">
+                    <p><strong>{{ cancion.titulo }}</strong></p>
+                    <p>{{ cancion.artista.nombre }}</p>
+                </div>
+                <div class="actions">
+                    <!-- Menú desplegable para seleccionar una playlist -->
+                    <form method="POST" action="{{ url_for('main.add_to_playlist', id_cancion=cancion.id_cancion) }}">
+                        <select name="id_playlist" required>
+                            <option value="" disabled selected>Selecciona una playlist</option>
+                            {% for playlist in playlists %}
+                                <option value="{{ playlist.id_playlist }}">{{ playlist.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="add-btn">Agregar</button>
+                    </form>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
     <!-- Mostrar Canciones Favoritas -->
     <div class="favorites-section">
         <h3>Mis Canciones Favoritas</h3>
@@ -61,75 +125,3 @@
     </div>
 </section>
 {% endblock %}
-
-/* Estilos para las tarjetas de canciones y álbumes */
-.songs-grid, .albums-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    padding: 2rem;
-}
-
-.song-card, .album-card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.song-card:hover, .album-card:hover {
-    transform: translateY(-5px);
-    background-color: var(--hover-bg);
-}
-
-.song-card h3, .album-card h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.2rem;
-}
-
-.artist-info {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-}
-
-.audio-player {
-    width: 100%;
-    margin-top: 1rem;
-}
-
-audio {
-    width: 100%;
-    height: 40px;
-    border-radius: 20px;
-}
-
-audio::-webkit-media-controls-panel {
-    background-color: var(--card-bg);
-}
-
-.album-card img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
-.view-album-btn {
-    display: inline-block;
-    background-color: var(--spotify-green);
-    color: white;
-    padding: 0.8rem 1.5rem;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: 600;
-    margin-top: 1rem;
-    transition: background-color 0.3s ease;
-}
-
-.view-album-btn:hover {
-    background-color: #1ed760;
-}
