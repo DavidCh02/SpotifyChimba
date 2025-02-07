@@ -1,78 +1,121 @@
-<!-- app/templates/admin.html -->
-
 {% extends "base.html" %}
-
 {% block content %}
-<section class="admin">
+<section class="admin-section">
     <h2>Panel de Administración</h2>
-    <h3>Agregar Artista</h3>
-    <form method="POST" action="{{ url_for('main.admin') }}">
-        <input type="hidden" name="add_artist">
-        <label for="nombre">Nombre:</label>
-        <input type="text" id="nombre" name="nombre" required>
-        <button type="submit">Agregar Artista</button>
-    </form>
 
-<h3>Agregar Álbum</h3>
-<form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data">
-    <input type="hidden" name="add_album">
+    <!-- Agregar Artista -->
+    <div class="form-container">
+        <h3>Agregar Artista</h3>
+        <form method="POST" action="{{ url_for('main.admin') }}" class="artist-form">
+            <input type="hidden" name="add_artist" value="1">
+            <!-- Nombre -->
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            <!-- Descripción -->
+            <div class="form-group">
+                <label for="descripcion">Descripción:</label>
+                <textarea id="descripcion" name="descripcion" rows="4"></textarea>
+            </div>
+            <!-- País de Origen -->
+            <div class="form-group">
+                <label for="pais_origen">País de Origen:</label>
+                <input type="text" id="pais_origen" name="pais_origen">
+            </div>
+            <!-- Fecha de Inicio -->
+            <div class="form-group">
+                <label for="fecha_inicio">Fecha de Inicio:</label>
+                <input type="date" id="fecha_inicio" name="fecha_inicio">
+            </div>
+            <!-- Botón de Envío -->
+            <button type="submit" class="submit-btn">Agregar Artista</button>
+        </form>
+    </div>
 
-    <label for="titulo">Título:</label>
-    <input type="text" id="titulo" name="titulo" required>
+    <!-- Agregar Álbum -->
+    <div class="form-container">
+        <h3>Agregar Álbum</h3>
+        <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="album-form">
+            <input type="hidden" name="add_album" value="1">
+            <div class="form-group">
+                <label for="titulo">Título:</label>
+                <input type="text" id="titulo" name="titulo" required>
+            </div>
+            <div class="form-group">
+                <label for="id_artista">Artista:</label>
+                <select id="id_artista" name="id_artista" required>
+                    {% for artista in artistas %}
+                        <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="canciones">Subir Canciones:</label>
+                <input type="file" id="canciones" name="canciones" multiple required>
+            </div>
+            <button type="submit" class="submit-btn">Agregar Álbum</button>
+        </form>
+    </div>
 
-    <label for="id_artista">Artista:</label>
-    <select id="id_artista" name="id_artista" required>
-        {% for artista in artistas %}
-            <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
-        {% endfor %}
-    </select>
+    <!-- Subir Canción -->
+    <div class="form-container">
+        <h3>Subir Canción</h3>
+        <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data" class="song-form">
+            <input type="hidden" name="upload_song" value="1">
+            <div class="form-group">
+                <label for="titulo">Título:</label>
+                <input type="text" id="titulo" name="titulo" required>
+            </div>
+            <div class="form-group">
+                <label for="id_artista">Artista:</label>
+                <select id="id_artista" name="id_artista" required>
+                    {% for artista in artistas %}
+                        <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="id_album">Álbum:</label>
+                <select id="id_album" name="id_album">
+                    <option value="">Ninguno (Sencillo)</option>
+                    {% for album in albumes %}
+                        <option value="{{ album.id_album }}">{{ album.titulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="archivo">Archivo de Audio:</label>
+                <input type="file" id="archivo" name="archivo" accept="audio/*" required>
+            </div>
+            <button type="submit" class="submit-btn">Subir Canción</button>
+        </form>
+    </div>
 
-    <label for="canciones">Subir Canciones:</label>
-    <input type="file" id="canciones" name="canciones" multiple required>
-
-    <button type="submit">Agregar Álbum</button>
-</form>
-
-
-    <h3>Subir Canción</h3>
-    <form method="POST" action="{{ url_for('main.admin') }}" enctype="multipart/form-data">
-        <input type="hidden" name="upload_song">
-        <label for="titulo">Título:</label>
-        <input type="text" id="titulo" name="titulo" required>
-        <label for="id_artista">Artista:</label>
-        <select id="id_artista" name="id_artista" required>
-            {% for artista in artistas %}
-                <option value="{{ artista.id_artista }}">{{ artista.nombre }}</option>
+    <!-- Lista de Canciones -->
+    <div class="songs-list">
+        <h3>Canciones</h3>
+        <ul>
+            {% for cancion in canciones %}
+                <li class="song-item">
+                    <div class="song-info">
+                        <p><strong>{{ cancion.titulo }}</strong></p>
+                        <p>{{ cancion.artista.nombre }} - {{ cancion.album.titulo if cancion.album else 'Sencillo' }}</p>
+                        <p>Duración: {{ cancion.duracion }} segundos</p>
+                        <audio controls>
+                            <source src="{{ url_for('static', filename='uploads/' ~ cancion.archivo) }}" type="audio/mpeg">
+                            Tu navegador no soporta la reproducción de audio.
+                        </audio>
+                    </div>
+                    <div class="actions">
+                        <form method="POST" action="{{ url_for('main.delete_song', id_cancion=cancion.id_cancion) }}">
+                            <button type="submit" class="delete-btn">Eliminar</button>
+                        </form>
+                        <a href="{{ url_for('main.edit_song', id_cancion=cancion.id_cancion) }}" class="edit-btn">Editar</a>
+                    </div>
+                </li>
             {% endfor %}
-        </select>
-        <label for="id_album">Álbum:</label>
-        <select id="id_album" name="id_album">
-            <option value="">Ninguno (Sencillo)</option>
-            {% for album in albumes %}
-                <option value="{{ album.id_album }}">{{ album.titulo }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="archivo">Archivo de Audio:</label>
-        <input type="file" id="archivo" name="archivo" accept="audio/*" required>
-        <button type="submit">Subir Canción</button>
-    </form>
-
-    <h3>Canciones</h3>
-    <ul>
-        {% for cancion in canciones %}
-            <li>
-                {{ cancion.titulo }} - {{ cancion.artista.nombre }} - {{ cancion.album.titulo }} - {{ cancion.duracion }} segundos
-                <audio controls>
-                    <source src="{{ url_for('static', filename='uploads/' ~ cancion.archivo) }}" type="audio/mpeg">
-                    Tu navegador no soporta la reproducción de audio.
-                </audio>
-                <form method="POST" action="{{ url_for('main.delete_song', id_cancion=cancion.id_cancion) }}">
-                    <button type="submit">Eliminar</button>
-                </form>
-                <a href="{{ url_for('main.edit_song', id_cancion=cancion.id_cancion) }}">Editar</a>
-            </li>
-        {% endfor %}
-    </ul>
+        </ul>
+    </div>
 </section>
 {% endblock %}

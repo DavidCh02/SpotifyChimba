@@ -1,203 +1,35 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --spotify-green: #1DB954;
-            --dark-bg: #121212;
-            --card-bg: #282828;
-            --hover-bg: #404040;
-            --text-primary: #ffffff;
-            --text-secondary: #b3b3b3;
-        }
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+    <h1>Bienvenido a Mi App Spotify</h1>
+    <p>Descubre nueva música y disfruta de tus canciones favoritas en una experiencia única.</p>
+</section>
 
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--dark-bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .hero {
-            background: linear-gradient(to bottom, #1DB954, var(--dark-bg));
-            padding: 4rem 2rem;
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            margin: 2rem 0;
-            padding-left: 2rem;
-            position: relative;
-        }
-
-        .section-title::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 4px;
-            height: 24px;
-            background-color: var(--spotify-green);
-            transform: translateY(-50%);
-        }
-
-        .songs-grid, .albums-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            padding: 2rem;
-        }
-
-        .song-card, .album-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: transform 0.3s ease, background-color 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .song-card:hover, .album-card:hover {
-            transform: translateY(-5px);
-            background-color: var(--hover-bg);
-        }
-
-        .song-card h3, .album-card h3 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.2rem;
-        }
-
-        .artist-info {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        .audio-player {
-            width: 100%;
-            margin-top: 1rem;
-        }
-
-        audio {
-            width: 100%;
-            height: 40px;
-            border-radius: 20px;
-        }
-
-        audio::-webkit-media-controls-panel {
-            background-color: var(--card-bg);
-        }
-
-        .album-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .view-album-btn {
-            display: inline-block;
-            background-color: var(--spotify-green);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 1rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .view-album-btn:hover {
-            background-color: #1ed760;
-        }
-
-        .play-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            background-color: var(--spotify-green);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s ease;
-            opacity: 0;
-        }
-
-        .song-card:hover .play-icon {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 1;
-        }
-
-        @media (max-width: 768px) {
-            .songs-grid, .albums-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                padding: 1rem;
-            }
-
-            .hero {
-                padding: 2rem 1rem;
-            }
-
-            .hero h1 {
-                font-size: 2rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    {% extends "base.html" %}
-    {% block content %}
-    <section class="hero">
-        <h1>Bienvenido a Mi App Spotify</h1>
-        <p>Descubre nueva música y disfruta de tus canciones favoritas en una experiencia única.</p>
-    </section>
-
-   <section class="featured">
+<!-- Canciones Populares -->
+<section class="featured">
     <h2 class="section-title">Canciones Populares</h2>
     <div class="songs-grid">
         {% for cancion in canciones %}
             <div class="song-card">
+                <!-- Ícono de Reproducción -->
                 <div class="play-icon">
                     <i class="fas fa-play fa-lg" style="color: white;"></i>
                 </div>
+                <!-- Título y Artista -->
                 <h3>{{ cancion.titulo }}</h3>
                 <div class="artist-info">
                     <i class="fas fa-user"></i> {{ cancion.artista.nombre }}
                     <br>
                     <i class="fas fa-compact-disc"></i> {% if cancion.album %}{{ cancion.album.titulo }}{% else %}Sencillo{% endif %}
                 </div>
+                <!-- Reproductor de Audio -->
                 <div class="audio-player">
                     <audio controls>
                         <source src="{{ url_for('main.uploaded_file', filename=cancion.ruta_archivo) }}" type="audio/mpeg">
                         Tu navegador no soporta audio.
                     </audio>
                 </div>
-                <!-- Botón para marcar/desmarcar como favorita -->
+                <!-- Botón de Favoritos -->
                 <form action="{{ url_for('main.toggle_favorite_song', id_cancion=cancion.id_cancion) }}" method="POST" style="display: inline;">
                     <button type="submit" class="favorite-btn">
                         {% if current_user.is_authenticated and cancion in current_user.favoritos_canciones %}
@@ -212,75 +44,35 @@
     </div>
 </section>
 
+<!-- Álbumes Destacados -->
 <section class="featured">
     <h2 class="section-title">Álbumes Destacados</h2>
     <div class="albums-grid">
         {% for album in albumes %}
-       <div class="album-card">
-    <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
-    <h3>{{ album.titulo }}</h3>
-    <div class="artist-info">
-        <i class="fas fa-user"></i> {{ album.artista.nombre }}
-    </div>
-    <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
-        <i class="fas fa-play"></i> Ver Álbum
-    </a>
-    <!-- Botón para marcar/desmarcar como favorito -->
-    <form action="{{ url_for('main.toggle_favorite_album', id_album=album.id_album) }}" method="POST" style="display: inline;">
-        <button type="submit" class="favorite-btn">
-            {% if current_user.is_authenticated and album in current_user.favoritos_albumes %}
-                ❤️ Quitar de Favoritos
-            {% else %}
-                🖤 Agregar a Favoritos
-            {% endif %}
-        </button>
-    </form>
-</div>
+            <div class="album-card">
+                <!-- Imagen del Álbum -->
+                <img src="/api/placeholder/250/250" alt="{{ album.titulo }}">
+                <!-- Título y Artista -->
+                <h3>{{ album.titulo }}</h3>
+                <div class="artist-info">
+                    <i class="fas fa-user"></i> {{ album.artista.nombre }}
+                </div>
+                <!-- Botón Ver Álbum -->
+                <a href="{{ url_for('main.album', id_album=album.id_album) }}" class="view-album-btn">
+                    <i class="fas fa-play"></i> Ver Álbum
+                </a>
+                <!-- Botón de Favoritos -->
+                <form action="{{ url_for('main.toggle_favorite_album', id_album=album.id_album) }}" method="POST" style="display: inline;">
+                    <button type="submit" class="favorite-btn">
+                        {% if current_user.is_authenticated and album in current_user.favoritos_albumes %}
+                            ❤️ Quitar de Favoritos
+                        {% else %}
+                            🖤 Agregar a Favoritos
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
         {% endfor %}
     </div>
 </section>
-    {% endblock %}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const audioElements = document.querySelectorAll('audio');
-            const songCards = document.querySelectorAll('.song-card');
-
-            // Pausar otros audios cuando se reproduce uno
-            audioElements.forEach(audio => {
-                audio.addEventListener('play', () => {
-                    audioElements.forEach(otherAudio => {
-                        if (otherAudio !== audio) {
-                            otherAudio.pause();
-                        }
-                    });
-                });
-            });
-
-            // Añadir interactividad a las tarjetas
-            songCards.forEach(card => {
-                const playIcon = card.querySelector('.play-icon');
-                const audio = card.querySelector('audio');
-
-                playIcon.addEventListener('click', () => {
-                    if (audio.paused) {
-                        audioElements.forEach(a => a.pause());
-                        audio.play();
-                    } else {
-                        audio.pause();
-                    }
-                });
-
-                // Actualizar icono según el estado de reproducción
-                audio.addEventListener('play', () => {
-                    playIcon.querySelector('i').classList.replace('fa-play', 'fa-pause');
-                });
-
-                audio.addEventListener('pause', () => {
-                    playIcon.querySelector('i').classList.replace('fa-pause', 'fa-play');
-                });
-            });
-        });
-    </script>
-</body>
-</html>
+{% endblock %}

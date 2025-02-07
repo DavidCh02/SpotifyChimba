@@ -107,69 +107,113 @@ def requires_auth(f):
 # app/routes.py
 
 @main.route('/admin', methods=['GET', 'POST'])
-@requires_auth
+@requires_auth  # Requiere autenticación para acceder al panel de administración
 def admin():
     if request.method == 'POST':
+        # Agregar un artista
         if 'add_artist' in request.form:
+            # Obtener todos los datos del formulario
             nombre = request.form.get('nombre')
-            new_artist = Artista(nombre=nombre)
-            db.session.add(new_artist)
-            db.session.commit()
-            flash('Artista agregado correctamente', 'success')
+            descripcion = request.form.get('descripcion')
+            pais_origen = request.form.get('pais_origen')
+            fecha_inicio = request.form.get('fecha_inicio')
+
+            # Validar que el campo "nombre" no esté vacío
+            if not nombre:
+                flash("El nombre del artista es obligatorio.", "danger")
+                return redirect(url_for('main.admin'))
+
+            # Crear un nuevo artista
+            new_artist = Artista(
+                nombre=nombre,
+                descripcion=descripcion,
+                pais_origen=pais_origen,
+                fecha_inicio=fecha_inicio
+            )
+
+            try:
+                db.session.add(new_artist)
+                db.session.commit()
+                flash('Artista agregado correctamente', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al agregar el artista: {str(e)}", "danger")
+
+
+        # Agregar un álbum
         elif 'add_album' in request.form:
             titulo = request.form.get('titulo')
             id_artista = request.form.get('id_artista')
+
+            # Validar que el campo "título" y "id_artista" no estén vacíos
+            if not titulo or not id_artista:
+                flash("El título del álbum y el artista son obligatorios.", "danger")
+                return redirect(url_for('main.admin'))
+
+            # Crear un nuevo álbum
             new_album = Album(titulo=titulo, id_artista=id_artista)
-            db.session.add(new_album)
-            db.session.commit()
-            flash('Álbum agregado correctamente', 'success')
 
-            # Agregar canciones después de crear el álbum
-            canciones = request.files.getlist('canciones')  # Obtén las canciones subidas
-            for cancion in canciones:
-                filename = secure_filename(cancion.filename)
-                filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                cancion.save(filepath)  # Guarda la canción en el servidor
+            try:
+                db.session.add(new_album)
+                db.session.commit()
 
-                # Crea las canciones en la base de datos y asócialas con el álbum
-                nueva_cancion = Cancion(
-                    titulo=cancion.filename,
-                    ruta_archivo=filename,
-                    id_artista=id_artista,
-                    id_album=new_album.id_album
-                )
-                db.session.add(nueva_cancion)
-            db.session.commit()
+                # Subir canciones asociadas al álbum
+                canciones = request.files.getlist('canciones')  # Obtener las canciones subidas
+                for cancion in canciones:
+                    if cancion.filename:  # Verificar que el archivo no esté vacío
+                        filename = secure_filename(cancion.filename)
+                        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                        cancion.save(filepath)  # Guardar la canción en el servidor
 
+                        # Crear la canción en la base de datos y asociarla con el álbum
+                        nueva_cancion = Cancion(
+                            titulo=cancion.filename,
+                            ruta_archivo=filename,
+                            id_artista=id_artista,
+                            id_album=new_album.id_album
+                        )
+                        db.session.add(nueva_cancion)
+
+                db.session.commit()
+                flash('Álbum agregado correctamente', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al agregar el álbum: {str(e)}", "danger")
+
+        # Subir una canción adicional
         elif 'upload_song' in request.form:
-            # Subir una canción adicional (si no se subió al crear el álbum)
-            titulo = request.form['titulo']
-            id_artista = request.form['id_artista']
-            id_album = request.form['id_album']
-            archivo = request.files['archivo']
+            titulo = request.form.get('titulo')
+            id_artista = request.form.get('id_artista')
+            id_album = request.form.get('id_album')
+            archivo = request.files.get('archivo')
 
-            if not id_album:
-                id_album = None  # Si no se selecciona un álbum, lo dejamos como None
+            # Validar que el campo "título", "id_artista" y el archivo no estén vacíos
+            if not titulo or not id_artista or not archivo:
+                flash("El título, el artista y el archivo de la canción son obligatorios.", "danger")
+                return redirect(url_for('main.admin'))
 
             # Guardar el archivo de la canción
             filename = secure_filename(archivo.filename)
             filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             archivo.save(filepath)
 
-            # Crear y guardar la canción en la base de datos
+            # Crear la canción en la base de datos
             nueva_cancion = Cancion(
                 titulo=titulo,
                 ruta_archivo=filename,
                 id_artista=id_artista,
-                id_album=id_album
+                id_album=id_album if id_album else None  # Si no se selecciona un álbum, dejarlo como None
             )
-            db.session.add(nueva_cancion)
-            db.session.commit()
 
-            flash('Canción subida correctamente', 'success')
-            return redirect(url_for('main.admin'))
+            try:
+                db.session.add(nueva_cancion)
+                db.session.commit()
+                flash('Canción subida correctamente', 'success')
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al subir la canción: {str(e)}", "danger")
 
-    # Obtener los artistas y álbumes para el formulario
+    # Obtener los artistas, álbumes y canciones para mostrar en el formulario
     artistas = Artista.query.all()
     albumes = Album.query.all()
     canciones = Cancion.query.all()
@@ -178,12 +222,18 @@ def admin():
 
 
 @main.route('/delete_song/<int:id_cancion>', methods=['POST'])
-@requires_auth
+@login_required
 def delete_song(id_cancion):
-    song = Cancion.query.get_or_404(id_cancion)
-    db.session.delete(song)
-    db.session.commit()
-    flash('Canción eliminada correctamente', 'success')
+    cancion = Cancion.query.get_or_404(id_cancion)
+
+    try:
+        db.session.delete(cancion)
+        db.session.commit()
+        flash('Canción eliminada correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al eliminar la canción: {str(e)}", "danger")
+
     return redirect(url_for('main.admin'))
 
 @main.route('/edit_song/<int:id_cancion>', methods=['GET', 'POST'])

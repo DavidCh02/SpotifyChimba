@@ -42,8 +42,9 @@ class Artista(db.Model):
     fecha_inicio = db.Column(db.Date)
 
     # Relaciones
+    # Relaciones
     albumes = db.relationship('Album', backref='artista', lazy=True)
-    canciones = db.relationship('Cancion', backref='artista', lazy=True)
+    canciones = db.relationship('Cancion', backref='artista_relacionado', lazy=True)
 
 # Modelo Album
 class Album(db.Model):
@@ -58,6 +59,7 @@ class Album(db.Model):
     favoritos = db.relationship('FavoritoAlbum', backref='album', lazy=True)
 
 # Modelo Cancion
+# models.py
 class Cancion(db.Model):
     __tablename__ = 'cancion'
     id_cancion = db.Column(db.Integer, primary_key=True)
@@ -68,9 +70,10 @@ class Cancion(db.Model):
     id_album = db.Column(db.Integer, db.ForeignKey('album.id_album'))
     ruta_archivo = db.Column(db.String(200))
 
-    # Relación con FavoritoCancion (solo aquí se define el backref)
+    # Relaciones
     favoritos = db.relationship('FavoritoCancion', backref='cancion', lazy=True)
-
+    artista = db.relationship('Artista', backref='cancion_relacionada', lazy=True)
+    album = db.relationship('Album', backref='canciones')  # Relación con Album
 # Modelo Playlist
 class Playlist(db.Model):
     __tablename__ = 'playlist'
@@ -93,16 +96,6 @@ class PlaylistCancion(db.Model):
     cancion = db.relationship('Cancion', backref='playlist_cancion')
 
 # Modelo Historial
-class Historial(db.Model):
-    __tablename__ = 'historial'
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), primary_key=True)
-    id_cancion = db.Column(db.Integer, db.ForeignKey('cancion.id_cancion'), primary_key=True)
-    id_playlist = db.Column(db.Integer, db.ForeignKey('playlist.id_playlist'))
-    fecha = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-    # Relaciones
-    playlist = db.relationship('Playlist', backref='historial')
-    cancion = db.relationship('Cancion', backref='historial')
 
 # Modelo FavoritoCancion
 # Modelo FavoritoCancion
